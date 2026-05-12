@@ -1,6 +1,6 @@
-# flutter_monitoring_belajar_smk2
+# flutter-monitoring-belajar-smk2
 
-A new Flutter project.
+A new Flutter project for Monitoring Belajar SMK.
 
 ## Getting Started
 
