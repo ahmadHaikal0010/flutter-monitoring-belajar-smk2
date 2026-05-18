@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/utils/snack_bar_helper.dart';
 import '../../logic/providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -31,23 +32,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pendaftaran Berhasil! Silakan tunggu peninjauan admin.'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
+        SnackBarHelper.show(
+          context: context,
+          message: 'Pendaftaran Berhasil! Silakan tunggu peninjauan admin.',
         );
         Navigator.pop(context);
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.errorMessage ?? 'Pendaftaran Gagal'),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
+        SnackBarHelper.show(
+          context: context,
+          message: authProvider.errorMessage ?? 'Pendaftaran Gagal',
+          isError: true,
         );
       }
     }

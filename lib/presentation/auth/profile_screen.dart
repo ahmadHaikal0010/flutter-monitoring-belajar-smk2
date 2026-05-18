@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/utils/snack_bar_helper.dart';
 import '../../logic/providers/auth_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -36,23 +37,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profil berhasil diperbarui!'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
+        SnackBarHelper.show(
+          context: context,
+          message: 'Profil berhasil diperbarui!',
         );
         Navigator.pop(context);
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.errorMessage ?? 'Gagal memperbarui profil'),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
+        SnackBarHelper.show(
+          context: context,
+          message: authProvider.errorMessage ?? 'Gagal memperbarui profil',
+          isError: true,
         );
       }
     }
