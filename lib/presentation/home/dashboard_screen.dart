@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/constants/api_constants.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../auth/details_profile_screen.dart';
 
@@ -51,7 +52,12 @@ class DashboardScreen extends StatelessWidget {
                       CircleAvatar(
                         radius: 32,
                         backgroundColor: Colors.white.withValues(alpha: 0.2),
-                        child: const Icon(Icons.person, size: 32, color: Colors.white),
+                        backgroundImage: user?.student?.photoUrl != null
+                            ? NetworkImage(user!.student!.photoUrl!)
+                            : null,
+                        child: user?.student?.photoUrl == null
+                            ? const Icon(Icons.person, size: 32, color: Colors.white)
+                            : null,
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -122,9 +128,14 @@ class DashboardScreen extends StatelessWidget {
               color: Color(0xFF2563EB),
               borderRadius: BorderRadius.only(topRight: Radius.circular(32)),
             ),
-            currentAccountPicture: const CircleAvatar(
+            currentAccountPicture: CircleAvatar(
               backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Color(0xFF2563EB), size: 40),
+              backgroundImage: user?.student?.photoUrl != null
+                  ? NetworkImage(user!.student!.photoUrl!)
+                  : null,
+              child: user?.student?.photoUrl == null
+                  ? const Icon(Icons.person, color: Color(0xFF2563EB), size: 40)
+                  : null,
             ),
             accountName: Text(
               user?.name ?? 'Siswa',

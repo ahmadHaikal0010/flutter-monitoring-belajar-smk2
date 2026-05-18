@@ -23,14 +23,31 @@ class DetailsProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.all(24.0),
             child: Column(
               children: [
-                // Header Profile
+                // Header Profile with Photo
                 Center(
                   child: Column(
                     children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                        child: const Icon(Icons.person, size: 50, color: Color(0xFF2563EB)),
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 4),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                            )
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                          backgroundImage: user?.student?.photoUrl != null
+                              ? NetworkImage(user!.student!.photoUrl!)
+                              : null,
+                          child: user?.student?.photoUrl == null
+                              ? const Icon(Icons.person, size: 50, color: Color(0xFF2563EB))
+                              : null,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Text(

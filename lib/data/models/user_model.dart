@@ -39,12 +39,14 @@ class StudentModel {
   final String nisn;
   final String address;
   final String? photo;
+  final String? photoUrl;
 
   StudentModel({
     required this.id,
     required this.nisn,
     required this.address,
     this.photo,
+    this.photoUrl,
   });
 
   factory StudentModel.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class StudentModel {
       nisn: json['nisn'],
       address: json['address'] ?? '',
       photo: json['photo'],
+      photoUrl: json['photo_url'],
     );
   }
 
@@ -62,6 +65,7 @@ class StudentModel {
       'nisn': nisn,
       'address': address,
       'photo': photo,
+      'photo_url': photoUrl,
     };
   }
 }
