@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/utils/snack_bar_helper.dart';
 import '../../logic/providers/auth_provider.dart';
 import 'register_screen.dart';
 
@@ -40,23 +41,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Selamat datang kembali!'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
+        SnackBarHelper.show(
+          context: context,
+          message: 'Selamat datang kembali!',
         );
       }
     } else {
       // HANYA tampilkan SnackBar jika BUKAN pending approval
       if (mounted && !authProvider.isPendingApproval) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.errorMessage ?? 'Login Gagal'),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
+        SnackBarHelper.show(
+          context: context,
+          message: authProvider.errorMessage ?? 'Login Gagal',
+          isError: true,
         );
       }
     }
