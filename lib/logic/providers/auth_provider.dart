@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/user_model.dart';
 import '../../data/services/auth_service.dart';
+import '../../data/services/student_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
+  final StudentService _studentService = StudentService();
   UserModel? _user;
   String? _token;
   bool _isLoading = false;
@@ -37,7 +39,10 @@ class AuthProvider with ChangeNotifier {
       if (response.data['success'] == true) {
         final data = response.data['data'];
         _token = data['token'];
-        _user = UserModel.fromJson(data['user']);
+        
+        // Fetch complete profile with student details from StudentService
+        final profileResponse = await _studentService.getProfile(_token!);
+        _user = UserModel.fromJson(profileResponse.data['data']['user']);
         
         // Simpan token ke SharedPreferences
         final prefs = await SharedPreferences.getInstance();
@@ -49,7 +54,6 @@ class AuthProvider with ChangeNotifier {
       }
     } on DioException catch (e) {
       if (e.response != null && e.response!.data is Map) {
-        // Cek jika status 403 (Forbidden) yang biasanya berarti pending di logic backend Anda
         if (e.response!.statusCode == 403) {
           _isPendingApproval = true;
         }
@@ -97,7 +101,6 @@ class AuthProvider with ChangeNotifier {
       }
     } on DioException catch (e) {
       if (e.response != null && e.response!.data is Map) {
-        // Jika ada validation error dari Laravel
         if (e.response!.data['errors'] != null) {
           Map errors = e.response!.data['errors'];
           _errorMessage = errors.values.first[0];
@@ -111,6 +114,51 @@ class AuthProvider with ChangeNotifier {
       _errorMessage = 'Terjadi kesalahan tidak terduga';
     }
 
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
+  Future<bool> updateProfile({
+    required String name,
+    required String email,
+    String? nisn,
+    String? address,
+  }) async {
+    if (_token == null) return false;
+    
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _studentService.updateProfile(
+        token: _token!,
+        name: name,
+        email: email,
+        nisn: nisn,
+        address: address,
+      );
+
+      if (response.data['success'] == true) {
+        // Jangan percaya data dari response update (bisa stale di Laravel)
+        // Ambil ulang profile yang benar-benar fresh
+        final profileResponse = await _studentService.getProfile(_token!);
+        _user = UserModel.fromJson(profileResponse.data['data']['user']);
+
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+    }
+ on DioException catch (e) {
+      if (e.response != null && e.response!.data is Map) {
+        _errorMessage = e.response!.data['message'] ?? 'Gagal memperbarui profil';
+      } else {
+        _errorMessage = 'Gagal terhubung ke server';
+      }
+    }
+    
     _isLoading = false;
     notifyListeners();
     return false;
@@ -139,8 +187,8 @@ class AuthProvider with ChangeNotifier {
     _token = prefs.getString('token');
     
     try {
-      final response = await _authService.getUserProfile(_token!);
-      _user = UserModel.fromJson(response.data);
+      final response = await _studentService.getProfile(_token!);
+      _user = UserModel.fromJson(response.data['data']['user']);
       notifyListeners();
     } catch (_) {
       _token = null;
