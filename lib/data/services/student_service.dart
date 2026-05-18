@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import '../../core/constants/api_constants.dart';
 
@@ -6,7 +7,6 @@ class StudentService {
     baseUrl: ApiConstants.baseUrl,
     headers: {
       'Accept': 'application/json',
-      'Content-Type': 'application/json',
     },
   ));
 
@@ -32,17 +32,30 @@ class StudentService {
     required String email,
     String? nisn,
     String? address,
-    // Note: Photo update usually needs MultipartFile
+    File? photo,
   }) async {
     try {
+      // Menggunakan FormData untuk mendukung pengiriman file (Multipart)
+      Map<String, dynamic> dataMap = {
+        'name': name,
+        'email': email,
+        'nisn': nisn,
+        'address': address,
+      };
+
+      if (photo != null) {
+        String fileName = photo.path.split('/').last;
+        dataMap['photo'] = await MultipartFile.fromFile(
+          photo.path,
+          filename: fileName,
+        );
+      }
+
+      FormData formData = FormData.fromMap(dataMap);
+
       final response = await _dio.post(
         ApiConstants.updateProfile,
-        data: {
-          'name': name,
-          'email': email,
-          'nisn': nisn,
-          'address': address,
-        },
+        data: formData,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',

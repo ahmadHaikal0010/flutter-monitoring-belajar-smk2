@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -124,6 +125,7 @@ class AuthProvider with ChangeNotifier {
     required String email,
     String? nisn,
     String? address,
+    File? photo,
   }) async {
     if (_token == null) return false;
     
@@ -138,6 +140,7 @@ class AuthProvider with ChangeNotifier {
         email: email,
         nisn: nisn,
         address: address,
+        photo: photo,
       );
 
       if (response.data['success'] == true) {

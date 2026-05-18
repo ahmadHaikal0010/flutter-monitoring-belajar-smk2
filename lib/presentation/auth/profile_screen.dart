@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/snack_bar_helper.dart';
 import '../../logic/providers/auth_provider.dart';
@@ -15,6 +17,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _emailController;
   late TextEditingController _nisnController;
   late TextEditingController _addressController;
+  
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -26,6 +31,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _addressController = TextEditingController(text: user?.student?.address);
   }
 
+  Future<void> _pickImage() async {
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50, // Kompres gambar agar tidak terlalu besar
+    );
+
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+
   void _saveProfile() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.updateProfile(
@@ -33,6 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       email: _emailController.text,
       nisn: _nisnController.text,
       address: _addressController.text,
+      photo: _imageFile,
     );
 
     if (success) {
@@ -69,6 +88,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<AuthProvider>(context).user;
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -81,6 +102,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
+            // Avatar Picker
+            Center(
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                        )
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 60,
+                      backgroundColor: const Color(0xFFF1F5F9),
+                      backgroundImage: _imageFile != null
+                          ? FileImage(_imageFile!)
+                          : (user?.student?.photoUrl != null
+                              ? NetworkImage(user!.student!.photoUrl!)
+                              : null) as ImageProvider?,
+                      child: _imageFile == null && user?.student?.photoUrl == null
+                          ? const Icon(Icons.person, size: 60, color: Color(0xFFCBD5E1))
+                          : null,
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF2563EB),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
