@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/constants/api_constants.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../auth/details_profile_screen.dart';
+import 'subjects_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -97,7 +97,12 @@ class DashboardScreen extends StatelessWidget {
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
                   children: [
-                    _buildMenuCard(Icons.assignment_outlined, 'Tugas Saya', Colors.indigo, () {}),
+                    _buildMenuCard(Icons.assignment_outlined, 'Mata Pelajaran', Colors.indigo, () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SubjectsScreen()),
+                      );
+                    }),
                     _buildMenuCard(Icons.bar_chart_rounded, 'Progres Belajar', Colors.teal, () {}),
                     _buildMenuCard(Icons.calendar_month_outlined, 'Jadwal', Colors.orange, () {}),
                     _buildMenuCard(Icons.notifications_none_rounded, 'Notifikasi', Colors.amber, () {}),
@@ -147,6 +152,17 @@ class DashboardScreen extends StatelessWidget {
             leading: const Icon(Icons.dashboard_outlined),
             title: const Text('Dashboard'),
             onTap: () => Navigator.pop(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.auto_stories_outlined),
+            title: const Text('Mata Pelajaran Saya'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SubjectsScreen()),
+              );
+            },
           ),
           ListTile(
             leading: const Icon(Icons.person_outline_rounded),
