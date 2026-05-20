@@ -4,6 +4,7 @@ import '../../core/utils/snack_bar_helper.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../logic/providers/enrollment_provider.dart';
 import 'package:intl/intl.dart';
+import 'materials_screen.dart';
 
 class SubjectsScreen extends StatefulWidget {
   const SubjectsScreen({super.key});
@@ -188,7 +189,15 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
                     onTap: () {
-                      // Navigasi ke detail mata pelajaran/tugas nanti
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MaterialsScreen(
+                            subjectId: subject.id,
+                            subjectTitle: subject.title,
+                          ),
+                        ),
+                      );
                     },
                   ),
                 );

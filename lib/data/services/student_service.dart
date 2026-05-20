@@ -26,6 +26,32 @@ class StudentService {
     }
   }
 
+  Future<Response> getMaterials(String token, String subjectId) async {
+    try {
+      return await _dio.get(
+        '/subjects/$subjectId/materials',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+    } on DioException catch (_) {
+      rethrow;
+    }
+  }
+
+  Future<Response> getMaterialDetail(String token, String materialId) async {
+    try {
+      return await _dio.get(
+        '/materials/$materialId',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+    } on DioException catch (_) {
+      rethrow;
+    }
+  }
+
   Future<Response> updateProfile({
     required String token,
     required String name,
@@ -35,7 +61,6 @@ class StudentService {
     File? photo,
   }) async {
     try {
-      // Menggunakan FormData untuk mendukung pengiriman file (Multipart)
       Map<String, dynamic> dataMap = {
         'name': name,
         'email': email,
