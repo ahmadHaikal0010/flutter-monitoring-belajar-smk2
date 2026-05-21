@@ -1,17 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/constants/api_constants.dart';
 import '../../logic/providers/auth_provider.dart';
+import '../../logic/providers/enrollment_provider.dart';
 import '../auth/details_profile_screen.dart';
 import 'subjects_screen.dart';
+import 'progress_screen.dart';
+import 'package:intl/intl.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshData();
+    });
+  }
+
+  Future<void> _refreshData() async {
+    final token = Provider.of<AuthProvider>(context, listen: false).token;
+    if (token != null) {
+      await Provider.of<EnrollmentProvider>(context, listen: false).fetchDashboardData(token);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
+    return Consumer2<AuthProvider, EnrollmentProvider>(
+      builder: (context, authProvider, enrollmentProvider, child) {
         final user = authProvider.user;
+        
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
           appBar: AppBar(
@@ -24,95 +49,231 @@ class DashboardScreen extends StatelessWidget {
             iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
           ),
           drawer: _buildDrawer(context, authProvider),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Welcome Card
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+          body: RefreshIndicator(
+            onRefresh: _refreshData,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Welcome Card
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF2563EB).withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 32,
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          backgroundImage: user?.student?.photoUrl != null
+                              ? NetworkImage(user!.student!.photoUrl!)
+                              : null,
+                          child: user?.student?.photoUrl == null
+                              ? const Icon(Icons.person, size: 32, color: Colors.white)
+                              : null,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Selamat Datang,',
+                                style: TextStyle(color: Colors.white70, fontSize: 14),
+                              ),
+                              Text(
+                                user?.name ?? 'Siswa',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  
+                  // Statistics Section
+                  const Text(
+                    'Ringkasan Belajar',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      _buildStatCard(
+                        context,
+                        label: 'Mapel',
+                        value: '${enrollmentProvider.totalSubjects}',
+                        icon: Icons.book_rounded,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 12),
+                      _buildStatCard(
+                        context,
+                        label: 'Selesai',
+                        value: '${enrollmentProvider.totalCompletedMaterials}',
+                        icon: Icons.check_circle_rounded,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(width: 12),
+                      _buildStatCard(
+                        context,
+                        label: 'Progres',
+                        value: '${enrollmentProvider.averageProgress.toStringAsFixed(0)}%',
+                        icon: Icons.bar_chart_rounded,
+                        color: Colors.blue,
                       ),
                     ],
                   ),
-                  child: Row(
+
+                  const SizedBox(height: 32),
+                  
+                  // Main Menu
+                  const Text(
+                    'Menu Utama',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
                     children: [
-                      CircleAvatar(
-                        radius: 32,
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
-                        backgroundImage: user?.student?.photoUrl != null
-                            ? NetworkImage(user!.student!.photoUrl!)
-                            : null,
-                        child: user?.student?.photoUrl == null
-                            ? const Icon(Icons.person, size: 32, color: Colors.white)
-                            : null,
+                      Expanded(
+                        child: _buildMenuCard(
+                          Icons.auto_stories_rounded, 
+                          'Mata Pelajaran', 
+                          Colors.indigo, 
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const SubjectsScreen()),
+                            );
+                          }
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Selamat Datang,',
-                              style: TextStyle(color: Colors.white70, fontSize: 14),
-                            ),
-                            Text(
-                              user?.name ?? 'Siswa',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                        child: _buildMenuCard(
+                          Icons.insights_rounded, 
+                          'Progres Belajar', 
+                          Colors.teal, 
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const ProgressScreen()),
+                            );
+                          }
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 48),
-                // Main Menu
-                const Text(
-                  'Menu Utama',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                ),
-                const SizedBox(height: 16),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  children: [
-                    _buildMenuCard(Icons.assignment_outlined, 'Mata Pelajaran', Colors.indigo, () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const SubjectsScreen()),
-                      );
-                    }),
-                    _buildMenuCard(Icons.bar_chart_rounded, 'Progres Belajar', Colors.teal, () {}),
-                    _buildMenuCard(Icons.calendar_month_outlined, 'Jadwal', Colors.orange, () {}),
-                    _buildMenuCard(Icons.notifications_none_rounded, 'Notifikasi', Colors.amber, () {}),
+
+                  const SizedBox(height: 32),
+
+                  // Recent Activities (Improvisasi)
+                  if (enrollmentProvider.recentActivities.isNotEmpty) ...[
+                    const Text(
+                      'Terakhir Dipelajari',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                    ),
+                    const SizedBox(height: 16),
+                    ...enrollmentProvider.recentActivities.take(3).map((activity) => Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.check_circle_outline_rounded, color: Colors.green, size: 20),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  activity.materialTitle,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  activity.subjectTitle,
+                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            DateFormat('HH:mm').format(activity.lastAccessed),
+                            style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    )),
                   ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildStatCard(BuildContext context, {required String label, required String value, required IconData icon, required Color color}) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            ),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -165,6 +326,17 @@ class DashboardScreen extends StatelessWidget {
             },
           ),
           ListTile(
+            leading: const Icon(Icons.insights_rounded),
+            title: const Text('Progres Belajar'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProgressScreen()),
+              );
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.person_outline_rounded),
             title: const Text('Profil Saya'),
             onTap: () {
@@ -206,6 +378,7 @@ class DashboardScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -224,6 +397,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 16),
             ],
           ),
         ),

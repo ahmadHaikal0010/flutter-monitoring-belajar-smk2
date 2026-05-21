@@ -19,13 +19,15 @@ class SubjectModel {
 
   factory SubjectModel.fromJson(Map<String, dynamic> json) {
     return SubjectModel(
-      id: json['id'],
-      title: json['title'],
-      code: json['code'],
+      id: json['id'] ?? '',
+      title: json['title'] ?? 'Tanpa Judul',
+      code: json['code'] ?? '-', // Aggregator mungkin tidak kirim code
       description: json['description'],
-      teacherName: json['teacher_name'],
-      status: json['status'],
-      enrolledAt: DateTime.parse(json['enrolled_at']),
+      teacherName: json['teacher_name'] ?? 'Guru',
+      status: json['status'] ?? 'enrolled',
+      enrolledAt: json['enrolled_at'] != null 
+          ? DateTime.parse(json['enrolled_at']) 
+          : DateTime.now(), // Default ke sekarang jika tidak ada
     );
   }
 }
