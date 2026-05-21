@@ -79,6 +79,46 @@ class StudentService {
     }
   }
 
+  // Dashboard Aggregator Methods
+  Future<Response> getDashboardSummary(String token) async {
+    try {
+      return await _dio.get(
+        ApiConstants.dashboardSummary,
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+    } on DioException catch (_) {
+      rethrow;
+    }
+  }
+
+  Future<Response> getEnrolledSubjectsWithProgress(String token) async {
+    try {
+      return await _dio.get(
+        ApiConstants.dashboardSubjects,
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+    } on DioException catch (_) {
+      rethrow;
+    }
+  }
+
+  Future<Response> getRecentActivities(String token) async {
+    try {
+      return await _dio.get(
+        ApiConstants.dashboardActivities,
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+    } on DioException catch (_) {
+      rethrow;
+    }
+  }
+
   Future<Response> updateProfile({
     required String token,
     required String name,

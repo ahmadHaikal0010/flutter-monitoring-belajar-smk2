@@ -11,4 +11,9 @@ class ApiConstants {
   static const String register = '/register';
   static const String profile = '/profile';
   static const String updateProfile = '/update-profile';
+
+  // Dashboard Aggregator Endpoints
+  static const String dashboardSummary = '/dashboard/summary';
+  static const String dashboardSubjects = '/dashboard/enrolled-subjects';
+  static const String dashboardActivities = '/dashboard/recent-activities';
 }
