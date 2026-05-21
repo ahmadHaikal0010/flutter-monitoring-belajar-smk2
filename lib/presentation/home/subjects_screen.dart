@@ -148,6 +148,8 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
               itemCount: provider.subjects.length,
               itemBuilder: (context, index) {
                 final subject = provider.subjects[index];
+                final progress = provider.getProgress(subject.id);
+                
                 return Container(
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
@@ -171,19 +173,47 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                       ),
                       child: const Icon(Icons.book_rounded, color: Color(0xFF2563EB)),
                     ),
-                    title: Text(
-                      subject.title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            subject.title,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ),
+                        if (progress != null)
+                          Text(
+                            '${progress.percentage}%',
+                            style: TextStyle(
+                              fontSize: 12, 
+                              fontWeight: FontWeight.bold,
+                              color: progress.percentage == 100 ? Colors.green : Colors.blue,
+                            ),
+                          ),
+                      ],
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 4),
                         Text('Guru: ${subject.teacherName}', style: const TextStyle(fontSize: 13)),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 12),
+                        // Progress Bar
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: LinearProgressIndicator(
+                            value: (progress?.percentage ?? 0) / 100,
+                            backgroundColor: Colors.grey.shade100,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              progress?.percentage == 100 ? Colors.green : const Color(0xFF2563EB),
+                            ),
+                            minHeight: 6,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                         Text(
                           'Terdaftar pada: ${DateFormat('dd MMM yyyy').format(subject.enrolledAt)}',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                         ),
                       ],
                     ),

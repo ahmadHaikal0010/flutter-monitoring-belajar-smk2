@@ -3,8 +3,9 @@ import 'package:provider/provider.dart';
 import '../../data/models/material_model.dart';
 import '../../data/services/student_service.dart';
 import '../../logic/providers/auth_provider.dart';
-import 'package:intl/intl.dart';
+import '../../logic/providers/enrollment_provider.dart';
 import 'material_detail_screen.dart';
+import 'package:intl/intl.dart';
 
 class MaterialsScreen extends StatefulWidget {
   final String subjectId;
@@ -69,23 +70,33 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
         elevation: 0,
         foregroundColor: const Color(0xFF1E293B),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(child: Text(_errorMessage!))
-              : _materials.isEmpty
-                  ? _buildEmptyState()
-                  : RefreshIndicator(
-                      onRefresh: _fetchMaterials,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(20),
-                        itemCount: _materials.length,
-                        itemBuilder: (context, index) {
-                          final material = _materials[index];
-                          return _buildMaterialCard(material);
-                        },
-                      ),
-                    ),
+      body: Consumer<EnrollmentProvider>(
+        builder: (context, enrollmentProvider, child) {
+          final progress = enrollmentProvider.getProgress(widget.subjectId);
+
+          if (_isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (_materials.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          return RefreshIndicator(
+            onRefresh: _fetchMaterials,
+            child: ListView.builder(
+              padding: const EdgeInsets.all(20),
+              itemCount: _materials.length,
+              itemBuilder: (context, index) {
+                final material = _materials[index];
+                final isCompleted = progress?.isMaterialCompleted(material.id) ?? false;
+
+                return _buildMaterialCard(material, isCompleted);
+              },
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -107,7 +118,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
     );
   }
 
-  Widget _buildMaterialCard(MaterialModel material) {
+  Widget _buildMaterialCard(MaterialModel material, bool isCompleted) {
     IconData iconData;
     Color iconColor;
 
@@ -117,7 +128,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
         iconColor = Colors.redAccent;
         break;
       case 'document':
-        iconData = Icons.description_outlined;
+        iconData = Icons.picture_as_pdf_rounded;
         iconColor = Colors.blue;
         break;
       case 'url':
@@ -144,27 +155,46 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
-        leading: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Icon(iconData, color: iconColor),
+        leading: Stack(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(iconData, color: iconColor),
+            ),
+            if (isCompleted)
+              Positioned(
+                right: -2,
+                top: -2,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                  child: const Icon(Icons.check, size: 10, color: Colors.white),
+                ),
+              ),
+          ],
         ),
         title: Text(
           material.title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          style: TextStyle(
+            fontWeight: FontWeight.bold, 
+            fontSize: 16,
+            color: isCompleted ? Colors.grey : const Color(0xFF1E293B),
+            decoration: isCompleted ? TextDecoration.lineThrough : null,
+          ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
             Text(
-              material.description ?? 'Klik untuk melihat detail materi.',
+              isCompleted ? 'Materi telah selesai dipelajari.' : (material.description ?? 'Klik untuk belajar.'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13),
+              style: TextStyle(fontSize: 13, color: isCompleted ? Colors.green : Colors.grey),
             ),
             const SizedBox(height: 8),
             Row(
@@ -174,18 +204,6 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 Text(
                   DateFormat('dd MMM yyyy').format(material.createdAt),
                   style: const TextStyle(fontSize: 11, color: Colors.grey),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    material.contentType.toUpperCase(),
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey),
-                  ),
                 ),
               ],
             ),

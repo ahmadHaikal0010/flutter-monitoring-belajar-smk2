@@ -52,6 +52,33 @@ class StudentService {
     }
   }
 
+  // Progress Tracking Methods
+  Future<Response> markMaterialAsCompleted(String token, String materialId) async {
+    try {
+      return await _dio.post(
+        '/materials/$materialId/complete',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+    } on DioException catch (_) {
+      rethrow;
+    }
+  }
+
+  Future<Response> getSubjectProgress(String token, String subjectId) async {
+    try {
+      return await _dio.get(
+        '/subjects/$subjectId/progress',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+    } on DioException catch (_) {
+      rethrow;
+    }
+  }
+
   Future<Response> updateProfile({
     required String token,
     required String name,
