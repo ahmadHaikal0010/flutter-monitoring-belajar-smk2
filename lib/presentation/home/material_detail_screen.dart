@@ -3,8 +3,12 @@ import 'package:chewie/chewie.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import '../../core/utils/snack_bar_helper.dart';
 import '../../data/models/material_model.dart';
+import '../../logic/providers/auth_provider.dart';
+import '../../logic/providers/enrollment_provider.dart';
 import 'pdf_viewer_screen.dart';
 import 'web_view_screen.dart';
 import 'package:intl/intl.dart';
@@ -22,6 +26,7 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
   VideoPlayerController? _videoPlayerController;
   ChewieController? _chewieController;
   bool _isDownloading = false;
+  bool _isMarkingAsComplete = false;
 
   @override
   void initState() {
@@ -49,9 +54,40 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
 
     _videoPlayerController!.addListener(() {
       if (_videoPlayerController!.value.position == _videoPlayerController!.value.duration) {
-        print('TRACKING: Siswa telah menonton video hingga selesai.');
+        _markAsCompleted(); // OTOMATIS: Lapor selesai saat video tamat
       }
     });
+  }
+
+  Future<void> _markAsCompleted() async {
+    if (_isMarkingAsComplete) return;
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final enrollmentProvider = Provider.of<EnrollmentProvider>(context, listen: false);
+    
+    if (authProvider.token == null) return;
+
+    // Cek apakah sudah pernah selesai sebelumnya
+    final currentProgress = enrollmentProvider.getProgress(widget.material.subjectId);
+    if (currentProgress?.isMaterialCompleted(widget.material.id) ?? false) return;
+
+    setState(() => _isMarkingAsComplete = true);
+
+    final success = await enrollmentProvider.markAsCompleted(
+      authProvider.token!,
+      widget.material.subjectId,
+      widget.material.id,
+    );
+
+    if (mounted) {
+      setState(() => _isMarkingAsComplete = false);
+      if (success) {
+        SnackBarHelper.show(
+          context: context,
+          message: 'Selamat! Kamu telah menyelesaikan materi ini.',
+        );
+      }
+    }
   }
 
   Future<void> _openPdf() async {
@@ -72,6 +108,8 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
             builder: (context) => PdfViewerScreen(
               path: file.path,
               title: widget.material.title,
+              subjectId: widget.material.subjectId,
+              materialId: widget.material.id,
             ),
           ),
         );
@@ -79,8 +117,10 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isDownloading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal membuka file PDF')),
+        SnackBarHelper.show(
+          context: context,
+          message: 'Gagal membuka file PDF',
+          isError: true,
         );
       }
     }
@@ -95,7 +135,9 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
           title: widget.material.title,
         ),
       ),
-    );
+    ).then((_) {
+      _markAsCompleted(); // Tandai selesai setelah membuka tautan
+    });
   }
 
   @override
@@ -115,84 +157,92 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
         elevation: 0,
         foregroundColor: const Color(0xFF1E293B),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                widget.material.subjectTitle,
-                style: const TextStyle(
-                  color: Color(0xFF2563EB),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            Text(
-              widget.material.title,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-            ),
-            const SizedBox(height: 12),
-            
-            Row(
+      body: Consumer<EnrollmentProvider>(
+        builder: (context, enrollmentProvider, child) {
+          final isDone = enrollmentProvider.getProgress(widget.material.subjectId)?.isMaterialCompleted(widget.material.id) ?? false;
+          
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey),
-                const SizedBox(width: 6),
-                Text(
-                  DateFormat('dd MMMM yyyy').format(widget.material.createdAt),
-                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        widget.material.subjectTitle,
+                        style: const TextStyle(color: Color(0xFF2563EB), fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    if (isDone)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.green, size: 14),
+                            SizedBox(width: 4),
+                            Text('SELESAI', style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
+                const SizedBox(height: 16),
+                
+                Text(
+                  widget.material.title,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                ),
+                const SizedBox(height: 12),
+                
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Text(
+                      DateFormat('dd MMMM yyyy').format(widget.material.createdAt),
+                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const Divider(height: 48),
+
+                _buildNativeContent(),
+                
+                const SizedBox(height: 32),
+                
+                if (widget.material.description != null && widget.material.description!.isNotEmpty) ...[
+                  const Text(
+                    'Deskripsi Materi',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.material.description!,
+                    style: const TextStyle(fontSize: 15, color: Color(0xFF475569), height: 1.6),
+                  ),
+                ],
               ],
             ),
-            const Divider(height: 48),
-
-            _buildNativeContent(),
-            
-            const SizedBox(height: 32),
-            
-            if (widget.material.description != null && widget.material.description!.isNotEmpty) ...[
-              const Text(
-                'Deskripsi Materi',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                widget.material.description!,
-                style: const TextStyle(fontSize: 15, color: Color(0xFF475569), height: 1.6),
-              ),
-            ],
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
   Widget _buildNativeContent() {
     switch (widget.material.contentType) {
-      case 'text':
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: Text(
-            widget.material.contentBody,
-            style: const TextStyle(fontSize: 15, color: Color(0xFF1E293B), height: 1.6),
-          ),
-        );
-      
       case 'video':
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,6 +307,13 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -279,6 +336,7 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
                 backgroundColor: color,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
               ),
             ),
           ),
