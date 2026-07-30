@@ -62,10 +62,10 @@ class AuthProvider with ChangeNotifier {
       } else {
         _errorMessage = 'Tidak dapat terhubung ke server';
       }
-      print('Login Error: $_errorMessage');
+      debugPrint('Login Error: $_errorMessage');
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan tidak terduga';
-      print('Unexpected Error: $e');
+      debugPrint('Unexpected Error: $e');
     }
 
     _isLoading = false;
@@ -172,7 +172,7 @@ class AuthProvider with ChangeNotifier {
       try {
         await _authService.logout(_token!);
       } catch (e) {
-        print('Logout API Error: $e');
+        debugPrint('Logout API Error: $e');
       }
     }
     

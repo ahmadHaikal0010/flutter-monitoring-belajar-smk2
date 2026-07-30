@@ -23,15 +23,15 @@ class MaterialModel {
 
   factory MaterialModel.fromJson(Map<String, dynamic> json) {
     return MaterialModel(
-      id: json['id'],
-      subjectId: json['subject_id'],
-      title: json['title'],
-      contentType: json['content_type'],
-      contentBody: json['content_body'],
+      id: json['id'] ?? '',
+      subjectId: json['subject_id'] ?? '',
+      title: json['title'] ?? '',
+      contentType: json['content_type'] ?? 'text',
+      contentBody: json['content_body'] ?? '',
       contentBodyUrl: json['content_body_url'],
       description: json['description'],
-      createdAt: DateTime.parse(json['created_at']),
-      subjectTitle: json['subject_title'],
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
+      subjectTitle: json['subject_title'] ?? json['subject']?['title'] ?? '',
     );
   }
 }

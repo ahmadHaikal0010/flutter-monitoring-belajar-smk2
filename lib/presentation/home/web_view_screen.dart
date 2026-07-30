@@ -27,7 +27,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
           },
           onPageFinished: (String url) {
             setState(() => _isLoading = false);
-            print('TRACKING: Siswa telah selesai memuat halaman web: $url');
+            debugPrint('TRACKING: Siswa telah selesai memuat halaman web: $url');
           },
           onWebResourceError: (WebResourceError error) {
             debugPrint('WebView Error: ${error.description}');
