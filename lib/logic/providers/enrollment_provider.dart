@@ -11,7 +11,7 @@ class EnrollmentProvider with ChangeNotifier {
   final StudentService _studentService = StudentService();
   
   List<SubjectModel> _subjects = [];
-  Map<String, ProgressModel> _subjectProgress = {}; // key: subjectId
+  final Map<String, ProgressModel> _subjectProgress = {}; // key: subjectId
   List<RecentActivityModel> _recentActivities = [];
   
   // Dashboard Summary Data
@@ -55,21 +55,17 @@ class EnrollmentProvider with ChangeNotifier {
         _recentActivities = data.map((json) => RecentActivityModel.fromJson(json)).toList();
       }
 
-      // 3. Fetch Subjects with Progress (Optimized)
+      // 3. Fetch Subjects with Progress
       final subjectRes = await _studentService.getEnrolledSubjectsWithProgress(token);
       if (subjectRes.data['success'] == true) {
         final List data = subjectRes.data['data'];
         _subjects = data.map((json) => SubjectModel.fromJson(json)).toList();
         
-        // Map progress data from the optimized response
-        for (var json in data) {
-          if (json['progress'] != null) {
-            _subjectProgress[json['id']] = ProgressModel.fromJson(json['progress']);
-          }
-        }
+        // Fetch detailed progress including exam_results for all subjects
+        await Future.wait(_subjects.map((subject) => fetchSubjectProgress(token, subject.id)));
       }
     } catch (e) {
-      print('Dashboard Fetch Error: $e');
+      debugPrint('Dashboard Fetch Error: $e');
       _errorMessage = 'Gagal memuat data dashboard';
     }
 
@@ -90,7 +86,7 @@ class EnrollmentProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error fetching progress for $subjectId: $e');
+      debugPrint('Error fetching progress for $subjectId: $e');
     }
   }
 
@@ -103,7 +99,7 @@ class EnrollmentProvider with ChangeNotifier {
         return true;
       }
     } catch (e) {
-      print('Error marking material as completed: $e');
+      debugPrint('Error marking material as completed: $e');
     }
     return false;
   }

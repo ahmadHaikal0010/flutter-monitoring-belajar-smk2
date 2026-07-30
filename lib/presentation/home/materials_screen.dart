@@ -5,6 +5,7 @@ import '../../data/services/student_service.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../logic/providers/enrollment_provider.dart';
 import 'material_detail_screen.dart';
+import 'exams_tab.dart';
 import 'package:intl/intl.dart';
 
 class MaterialsScreen extends StatefulWidget {
@@ -56,47 +57,87 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppBar(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Detail Mata Pelajaran', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(widget.subjectTitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            ],
+          ),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          foregroundColor: const Color(0xFF1E293B),
+          bottom: const TabBar(
+            labelColor: Color(0xFF2563EB),
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: Color(0xFF2563EB),
+            indicatorWeight: 3,
+            tabs: [
+              Tab(text: 'Materi'),
+              Tab(text: 'Ujian'),
+            ],
+          ),
+        ),
+        body: TabBarView(
           children: [
-            const Text('Materi Belajar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text(widget.subjectTitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            _buildMaterialsView(),
+            ExamsTab(subjectId: widget.subjectId),
           ],
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        foregroundColor: const Color(0xFF1E293B),
       ),
-      body: Consumer<EnrollmentProvider>(
-        builder: (context, enrollmentProvider, child) {
-          final progress = enrollmentProvider.getProgress(widget.subjectId);
+    );
+  }
 
-          if (_isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+  Widget _buildMaterialsView() {
+    return Consumer<EnrollmentProvider>(
+      builder: (context, enrollmentProvider, child) {
+        final progress = enrollmentProvider.getProgress(widget.subjectId);
 
-          if (_materials.isEmpty) {
-            return _buildEmptyState();
-          }
+        if (_isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-          return RefreshIndicator(
-            onRefresh: _fetchMaterials,
-            child: ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: _materials.length,
-              itemBuilder: (context, index) {
-                final material = _materials[index];
-                final isCompleted = progress?.isMaterialCompleted(material.id) ?? false;
-
-                return _buildMaterialCard(material, isCompleted);
-              },
+        if (_errorMessage != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+                const SizedBox(height: 12),
+                Text(_errorMessage!, style: const TextStyle(color: Colors.grey)),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: _fetchMaterials,
+                  child: const Text('Coba Lagi'),
+                ),
+              ],
             ),
           );
-        },
-      ),
+        }
+
+        if (_materials.isEmpty) {
+          return _buildEmptyState();
+        }
+
+        return RefreshIndicator(
+          onRefresh: _fetchMaterials,
+          child: ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: _materials.length,
+            itemBuilder: (context, index) {
+              final material = _materials[index];
+              final isCompleted = progress?.isMaterialCompleted(material.id) ?? false;
+
+              return _buildMaterialCard(material, isCompleted);
+            },
+          ),
+        );
+      },
     );
   }
 
