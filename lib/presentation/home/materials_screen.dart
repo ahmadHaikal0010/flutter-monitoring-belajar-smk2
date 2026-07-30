@@ -8,6 +8,8 @@ import 'material_detail_screen.dart';
 import 'exams_tab.dart';
 import 'package:intl/intl.dart';
 
+import 'assignments_screen.dart';
+
 class MaterialsScreen extends StatefulWidget {
   final String subjectId;
   final String subjectTitle;
@@ -58,7 +60,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
@@ -79,6 +81,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             indicatorWeight: 3,
             tabs: [
               Tab(text: 'Materi'),
+              Tab(text: 'Tugas'),
               Tab(text: 'Ujian'),
             ],
           ),
@@ -86,6 +89,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
         body: TabBarView(
           children: [
             _buildMaterialsView(),
+            AssignmentsScreen(subjectId: widget.subjectId, subjectTitle: widget.subjectTitle, isEmbedded: true),
             ExamsTab(subjectId: widget.subjectId),
           ],
         ),
