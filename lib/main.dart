@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'logic/providers/auth_provider.dart';
 import 'logic/providers/enrollment_provider.dart';
 import 'logic/providers/exam_provider.dart';
+import 'logic/providers/assignment_provider.dart';
 import 'presentation/auth/login_screen.dart';
 import 'presentation/auth/pending_approval_screen.dart';
 import 'presentation/home/dashboard_screen.dart';
@@ -14,6 +15,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => AuthProvider()..tryAutoLogin()),
         ChangeNotifierProvider(create: (_) => EnrollmentProvider()),
         ChangeNotifierProvider(create: (_) => ExamProvider()),
+        ChangeNotifierProvider(create: (_) => AssignmentProvider()),
       ],
       child: const MyApp(),
     ),
