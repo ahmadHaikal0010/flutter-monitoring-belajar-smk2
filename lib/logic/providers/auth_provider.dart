@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/user_model.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/student_service.dart';
+import '../../data/services/cache_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -153,8 +154,7 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
         return true;
       }
-    }
- on DioException catch (e) {
+    } on DioException catch (e) {
       if (e.response != null && e.response!.data is Map) {
         _errorMessage = e.response!.data['message'] ?? 'Gagal memperbarui profil';
       } else {
@@ -166,7 +166,6 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     return false;
   }
-
   Future<void> logout() async {
     if (_token != null) {
       try {
@@ -178,6 +177,7 @@ class AuthProvider with ChangeNotifier {
     
     _token = null;
     _user = null;
+    await CacheService.clearAllCache();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     notifyListeners();

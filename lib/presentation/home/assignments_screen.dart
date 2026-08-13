@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
+import '../../core/utils/date_helper.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../logic/providers/assignment_provider.dart';
 import '../../data/models/assignment_model.dart';
@@ -39,13 +39,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   }
 
   String _formatDate(String? isoDate) {
-    if (isoDate == null || isoDate.isEmpty) return 'Tidak ada tenggat';
-    try {
-      final dt = DateTime.parse(isoDate).toLocal();
-      return DateFormat('d MMM y, HH:mm', 'id_ID').format(dt);
-    } catch (_) {
-      return isoDate;
-    }
+    return DateHelper.formatDateTime(isoDate);
   }
 
   @override
