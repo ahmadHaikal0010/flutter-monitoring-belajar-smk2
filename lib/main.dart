@@ -8,7 +8,11 @@ import 'presentation/auth/login_screen.dart';
 import 'presentation/auth/pending_approval_screen.dart';
 import 'presentation/home/dashboard_screen.dart';
 
-void main() {
+import 'core/utils/date_helper.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await DateHelper.initLocale();
   runApp(
     MultiProvider(
       providers: [

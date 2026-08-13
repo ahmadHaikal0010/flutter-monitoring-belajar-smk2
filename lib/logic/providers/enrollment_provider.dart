@@ -5,6 +5,7 @@ import '../../data/models/progress_model.dart';
 import '../../data/models/recent_activity_model.dart';
 import '../../data/services/enrollment_service.dart';
 import '../../data/services/student_service.dart';
+import '../../data/services/cache_service.dart';
 
 class EnrollmentProvider with ChangeNotifier {
   final EnrollmentService _enrollmentService = EnrollmentService();
@@ -35,42 +36,92 @@ class EnrollmentProvider with ChangeNotifier {
   double get averageProgress => _summaryOverallProgress;
 
   Future<void> fetchDashboardData(String token) async {
-    _isLoading = true;
-    notifyListeners();
+    // 1. Instant Load from Cache
+    await _loadDashboardFromCache();
+
+    if (_subjects.isEmpty && _recentActivities.isEmpty) {
+      _isLoading = true;
+      notifyListeners();
+    }
 
     try {
-      // 1. Fetch Summary
-      final summaryRes = await _studentService.getDashboardSummary(token);
+      // 2. Fetch Fresh Data from API Server in Parallel
+      final summaryFuture = _studentService.getDashboardSummary(token);
+      final activityFuture = _studentService.getRecentActivities(token);
+      final subjectFuture = _studentService.getEnrolledSubjectsWithProgress(token);
+
+      final results = await Future.wait([summaryFuture, activityFuture, subjectFuture]);
+
+      final summaryRes = results[0];
+      final activityRes = results[1];
+      final subjectRes = results[2];
+
+      // Save & Update Summary
       if (summaryRes.data['success'] == true) {
         final data = summaryRes.data['data'];
         _summaryTotalSubjects = data['total_enrolled_subjects'];
         _summaryTotalCompleted = data['total_completed_materials'];
         _summaryOverallProgress = (data['overall_progress_percentage'] as num).toDouble();
+        await CacheService.saveCache('dashboard_summary', data);
       }
 
-      // 2. Fetch Recent Activities
-      final activityRes = await _studentService.getRecentActivities(token);
+      // Save & Update Activities
       if (activityRes.data['success'] == true) {
         final List data = activityRes.data['data'];
         _recentActivities = data.map((json) => RecentActivityModel.fromJson(json)).toList();
+        await CacheService.saveCache('dashboard_activities', data);
       }
 
-      // 3. Fetch Subjects with Progress
-      final subjectRes = await _studentService.getEnrolledSubjectsWithProgress(token);
+      // Save & Update Subjects
       if (subjectRes.data['success'] == true) {
         final List data = subjectRes.data['data'];
         _subjects = data.map((json) => SubjectModel.fromJson(json)).toList();
+        await CacheService.saveCache('dashboard_subjects', data);
         
         // Fetch detailed progress including exam_results for all subjects
         await Future.wait(_subjects.map((subject) => fetchSubjectProgress(token, subject.id)));
       }
+
+      _errorMessage = null;
     } catch (e) {
       debugPrint('Dashboard Fetch Error: $e');
-      _errorMessage = 'Gagal memuat data dashboard';
+      if (_subjects.isEmpty) {
+        _errorMessage = 'Gagal memuat data. Periksa koneksi internet Anda.';
+      }
     }
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<void> _loadDashboardFromCache() async {
+    try {
+      final summaryCache = await CacheService.getCache('dashboard_summary');
+      if (summaryCache != null) {
+        _summaryTotalSubjects = summaryCache['total_enrolled_subjects'] ?? 0;
+        _summaryTotalCompleted = summaryCache['total_completed_materials'] ?? 0;
+        _summaryOverallProgress = (summaryCache['overall_progress_percentage'] as num? ?? 0.0).toDouble();
+      }
+
+      final activityCache = await CacheService.getCache('dashboard_activities');
+      if (activityCache != null && activityCache is List) {
+        _recentActivities = activityCache.map((json) => RecentActivityModel.fromJson(json)).toList();
+      }
+
+      final subjectCache = await CacheService.getCache('dashboard_subjects');
+      if (subjectCache != null && subjectCache is List) {
+        _subjects = subjectCache.map((json) => SubjectModel.fromJson(json)).toList();
+        for (final subject in _subjects) {
+          final progressCache = await CacheService.getCache('subject_progress_${subject.id}');
+          if (progressCache != null) {
+            _subjectProgress[subject.id] = ProgressModel.fromJson(progressCache);
+          }
+        }
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading dashboard cache: $e');
+    }
   }
 
   // Fallback for screens that only need subjects
@@ -79,10 +130,19 @@ class EnrollmentProvider with ChangeNotifier {
   }
 
   Future<void> fetchSubjectProgress(String token, String subjectId) async {
+    // Instant cache check
+    final cached = await CacheService.getCache('subject_progress_$subjectId');
+    if (cached != null) {
+      _subjectProgress[subjectId] = ProgressModel.fromJson(cached);
+      notifyListeners();
+    }
+
     try {
       final response = await _studentService.getSubjectProgress(token, subjectId);
       if (response.data['success'] == true) {
-        _subjectProgress[subjectId] = ProgressModel.fromJson(response.data['data']);
+        final data = response.data['data'];
+        _subjectProgress[subjectId] = ProgressModel.fromJson(data);
+        await CacheService.saveCache('subject_progress_$subjectId', data);
         notifyListeners();
       }
     } catch (e) {

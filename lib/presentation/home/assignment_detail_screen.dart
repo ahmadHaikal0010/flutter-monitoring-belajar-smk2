@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/utils/date_helper.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/utils/snack_bar_helper.dart';
 import '../../logic/providers/auth_provider.dart';
@@ -135,13 +136,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
   }
 
   String _formatDate(String? isoDate) {
-    if (isoDate == null || isoDate.isEmpty) return 'Tidak Ada';
-    try {
-      final dt = DateTime.parse(isoDate).toLocal();
-      return DateFormat('d MMM y, HH:mm', 'id_ID').format(dt);
-    } catch (_) {
-      return isoDate;
-    }
+    return DateHelper.formatDateTime(isoDate);
   }
 
   @override
@@ -195,11 +190,12 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
                         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                       ),
                       const SizedBox(height: 16),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
-                          _buildInfoBadge(Icons.event_outlined, 'Tenggat: ${_formatDate(assignment.dueDate)}', Colors.orange),
-                          const SizedBox(width: 8),
-                          _buildInfoBadge(Icons.grade_outlined, 'Maks: ${assignment.maxScore} Poin', Colors.blue),
+                          _buildChip(Icons.event_outlined, 'Tenggat: ${_formatDate(assignment.dueDate)}', Colors.orange),
+                          _buildChip(Icons.grade_outlined, 'Maks: ${assignment.maxScore} Poin', Colors.blue),
                         ],
                       ),
                     ],
@@ -273,27 +269,26 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
     );
   }
 
-  Widget _buildInfoBadge(IconData icon, String text, MaterialColor color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: color.shade50,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 14, color: color.shade700),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                text,
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color.shade700),
-                overflow: TextOverflow.ellipsis,
-              ),
+  Widget _buildChip(IconData icon, String text, MaterialColor color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.shade200),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: color.shade700),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color.shade700),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
