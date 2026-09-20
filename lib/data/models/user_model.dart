@@ -40,6 +40,7 @@ class StudentModel {
   final String address;
   final String? photo;
   final String? photoUrl;
+  final String? className;
 
   StudentModel({
     required this.id,
@@ -47,15 +48,24 @@ class StudentModel {
     required this.address,
     this.photo,
     this.photoUrl,
+    this.className,
   });
 
   factory StudentModel.fromJson(Map<String, dynamic> json) {
+    String? className = json['class_name'];
+    if (className == null && json['classroom'] != null) {
+      if (json['classroom'] is Map) {
+        className = json['classroom']['nama_kelas'] ?? json['classroom']['name'];
+      }
+    }
+
     return StudentModel(
-      id: json['id'],
-      nisn: json['nisn'],
-      address: json['address'] ?? '',
-      photo: json['photo'],
+      id: json['id'] ?? '',
+      nisn: json['nisn'] ?? '',
+      address: json['address'] ?? json['alamat'] ?? '',
+      photo: json['photo'] ?? json['foto'],
       photoUrl: json['photo_url'],
+      className: className,
     );
   }
 
@@ -66,6 +76,7 @@ class StudentModel {
       'address': address,
       'photo': photo,
       'photo_url': photoUrl,
+      'class_name': className,
     };
   }
 }

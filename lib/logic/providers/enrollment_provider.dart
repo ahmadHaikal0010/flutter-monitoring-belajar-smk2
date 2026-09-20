@@ -12,6 +12,7 @@ class EnrollmentProvider with ChangeNotifier {
   final StudentService _studentService = StudentService();
   
   List<SubjectModel> _subjects = [];
+  List<SubjectModel> _availableSubjects = [];
   final Map<String, ProgressModel> _subjectProgress = {}; // key: subjectId
   List<RecentActivityModel> _recentActivities = [];
   
@@ -24,6 +25,7 @@ class EnrollmentProvider with ChangeNotifier {
   String? _errorMessage;
 
   List<SubjectModel> get subjects => _subjects;
+  List<SubjectModel> get availableSubjects => _availableSubjects;
   List<RecentActivityModel> get recentActivities => _recentActivities;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -34,6 +36,26 @@ class EnrollmentProvider with ChangeNotifier {
   int get totalSubjects => _summaryTotalSubjects > 0 ? _summaryTotalSubjects : _subjects.length;
   int get totalCompletedMaterials => _summaryTotalCompleted;
   double get averageProgress => _summaryOverallProgress;
+
+  Future<void> fetchAvailableSubjects(String token) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _enrollmentService.getAvailableSubjects(token);
+      if (response.data['success'] == true) {
+        final List data = response.data['data'];
+        _availableSubjects = data.map((json) => SubjectModel.fromJson(json)).toList();
+        _errorMessage = null;
+      }
+    } catch (e) {
+      debugPrint('Error fetching available subjects: $e');
+      _errorMessage = 'Gagal memuat daftar mata pelajaran tersedia.';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
 
   Future<void> fetchDashboardData(String token) async {
     // 1. Instant Load from Cache
@@ -164,21 +186,51 @@ class EnrollmentProvider with ChangeNotifier {
     return false;
   }
 
-  Future<bool> enroll(String token, String code) async {
+  Future<bool> enroll(String token, String subjectId) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final response = await _enrollmentService.enrollInSubject(token, code);
+      final response = await _enrollmentService.enrollInSubject(token, subjectId);
       if (response.data['success'] == true) {
-        await fetchDashboardData(token); // Refresh list and progress
+        // Refresh fresh data sequentially to ensure state update
+        await fetchAvailableSubjects(token); 
+        await fetchDashboardData(token); 
+        
         _isLoading = false;
         notifyListeners();
         return true;
       }
     } on DioException catch (e) {
       _errorMessage = e.response?.data['message'] ?? 'Gagal mendaftar ke mata pelajaran';
+    } catch (e) {
+      _errorMessage = 'Terjadi kesalahan sistem';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
+  Future<bool> unenroll(String token, String subjectId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _enrollmentService.unenrollFromSubject(token, subjectId);
+      if (response.data['success'] == true) {
+        // Refresh fresh data sequentially to ensure state update
+        await fetchAvailableSubjects(token);
+        await fetchDashboardData(token);
+
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+    } on DioException catch (e) {
+      _errorMessage = e.response?.data['message'] ?? 'Gagal melepas pendaftaran';
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan sistem';
     }

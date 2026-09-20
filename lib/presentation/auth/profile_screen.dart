@@ -17,6 +17,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _emailController;
   late TextEditingController _nisnController;
   late TextEditingController _addressController;
+  late TextEditingController _classController;
   
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
@@ -29,6 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _emailController = TextEditingController(text: user?.email);
     _nisnController = TextEditingController(text: user?.student?.nisn);
     _addressController = TextEditingController(text: user?.student?.address);
+    _classController = TextEditingController(text: user?.student?.className ?? 'Belum terdaftar di kelas');
   }
 
   Future<void> _pickImage() async {
@@ -170,6 +172,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     enabled: false,
                     decoration: _inputDecoration('NISN', Icons.badge_outlined).copyWith(
                       helperText: '* Hubungi admin jika terdapat kesalahan NISN',
+                      helperStyle: TextStyle(color: Colors.orange.shade700, fontSize: 11),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _classController,
+                    enabled: false,
+                    decoration: _inputDecoration('Kelas', Icons.class_outlined).copyWith(
+                      helperText: '* Kelas hanya bisa diubah oleh Guru/Admin',
                       helperStyle: TextStyle(color: Colors.orange.shade700, fontSize: 11),
                     ),
                   ),

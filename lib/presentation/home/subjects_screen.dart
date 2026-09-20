@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/utils/snack_bar_helper.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../logic/providers/enrollment_provider.dart';
 import 'package:intl/intl.dart';
+import 'available_subjects_screen.dart';
 import 'materials_screen.dart';
 
 class SubjectsScreen extends StatefulWidget {
@@ -14,8 +14,6 @@ class SubjectsScreen extends StatefulWidget {
 }
 
 class _SubjectsScreenState extends State<SubjectsScreen> {
-  final _codeController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -25,78 +23,6 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
         Provider.of<EnrollmentProvider>(context, listen: false).fetchEnrolledSubjects(token);
       }
     });
-  }
-
-  void _showEnrollDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Daftar Mata Pelajaran', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Masukkan kode pendaftaran yang diberikan oleh guru Anda.'),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _codeController,
-              decoration: InputDecoration(
-                labelText: 'Kode Mata Pelajaran',
-                hintText: 'CONTOH: MTK123',
-                filled: true,
-                fillColor: const Color(0xFFF1F5F9),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              textCapitalization: TextCapitalization.characters,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () => _enroll(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2563EB),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Daftar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _enroll() async {
-    final token = Provider.of<AuthProvider>(context, listen: false).token;
-    final enrollmentProvider = Provider.of<EnrollmentProvider>(context, listen: false);
-    
-    if (token == null) return;
-
-    final success = await enrollmentProvider.enroll(token, _codeController.text);
-
-    if (mounted) {
-      if (success) {
-        Navigator.pop(context);
-        _codeController.clear();
-        SnackBarHelper.show(
-          context: context,
-          message: 'Berhasil mendaftar ke mata pelajaran baru!',
-        );
-      } else {
-        SnackBarHelper.show(
-          context: context,
-          message: enrollmentProvider.errorMessage ?? 'Gagal mendaftar',
-          isError: true,
-        );
-      }
-    }
   }
 
   @override
@@ -237,7 +163,12 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showEnrollDialog,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AvailableSubjectsScreen()),
+          );
+        },
         backgroundColor: const Color(0xFF2563EB),
         child: const Icon(Icons.add, color: Colors.white),
       ),
