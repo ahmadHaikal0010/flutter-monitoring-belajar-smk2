@@ -23,11 +23,37 @@ class EnrollmentService {
     }
   }
 
-  Future<Response> enrollInSubject(String token, String code) async {
+  Future<Response> getAvailableSubjects(String token) async {
+    try {
+      return await _dio.get(
+        '/subjects/available',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+    } on DioException catch (_) {
+      rethrow;
+    }
+  }
+
+  Future<Response> enrollInSubject(String token, String subjectId) async {
     try {
       return await _dio.post(
         '/enroll',
-        data: {'code': code},
+        data: {'subject_id': subjectId},
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+    } on DioException catch (_) {
+      rethrow;
+    }
+  }
+
+  Future<Response> unenrollFromSubject(String token, String subjectId) async {
+    try {
+      return await _dio.delete(
+        '/subjects/$subjectId/unenroll',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),

@@ -6,6 +6,7 @@ class SubjectModel {
   final String teacherName;
   final String status;
   final DateTime enrolledAt;
+  final bool isEnrolled;
 
   SubjectModel({
     required this.id,
@@ -15,6 +16,7 @@ class SubjectModel {
     required this.teacherName,
     required this.status,
     required this.enrolledAt,
+    this.isEnrolled = false,
   });
 
   factory SubjectModel.fromJson(Map<String, dynamic> json) {
@@ -27,7 +29,8 @@ class SubjectModel {
       status: json['status'] ?? 'enrolled',
       enrolledAt: json['enrolled_at'] != null 
           ? DateTime.parse(json['enrolled_at']) 
-          : DateTime.now(), // Default ke sekarang jika tidak ada
+          : (json['terdaftar_pada'] != null ? DateTime.parse(json['terdaftar_pada']) : DateTime.now()),
+      isEnrolled: json['is_enrolled'] ?? false,
     );
   }
 }

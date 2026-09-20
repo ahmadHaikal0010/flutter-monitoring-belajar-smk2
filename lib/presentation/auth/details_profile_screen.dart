@@ -104,6 +104,8 @@ class DetailsProfileScreen extends StatelessWidget {
                     children: [
                       _buildDetailRow(Icons.badge_outlined, 'NISN', user?.student?.nisn ?? '-'),
                       const Divider(height: 32),
+                      _buildDetailRow(Icons.class_outlined, 'Kelas', user?.student?.className ?? 'Belum terdaftar di kelas'),
+                      const Divider(height: 32),
                       _buildDetailRow(Icons.mail_outline, 'Alamat Email', user?.email ?? '-'),
                       const Divider(height: 32),
                       _buildDetailRow(Icons.home_outlined, 'Alamat Lengkap', user?.student?.address ?? '-'),
