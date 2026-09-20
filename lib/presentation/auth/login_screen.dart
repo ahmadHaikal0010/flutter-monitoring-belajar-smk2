@@ -14,7 +14,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _nisnController = TextEditingController();
   final _passwordController = TextEditingController();
 
   Future<String> _getDeviceName() async {
@@ -34,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
     String deviceName = await _getDeviceName();
 
     final success = await authProvider.login(
-      _emailController.text,
+      _nisnController.text,
       _passwordController.text,
       deviceName,
     );
@@ -104,11 +104,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     children: [
                       TextField(
-                        controller: _emailController,
+                        controller: _nisnController,
                         decoration: InputDecoration(
-                          labelText: 'Email',
-                          hintText: 'nama@sekolah.sch.id',
-                          prefixIcon: const Icon(Icons.mail_outline),
+                          labelText: 'NISN',
+                          hintText: 'Masukkan NISN Anda',
+                          prefixIcon: const Icon(Icons.badge_outlined),
                           filled: true,
                           fillColor: const Color(0xFFF1F5F9),
                           border: OutlineInputBorder(
@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        keyboardType: TextInputType.emailAddress,
+                        keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 16),
                       TextField(
