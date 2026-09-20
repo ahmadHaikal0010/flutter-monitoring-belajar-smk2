@@ -239,7 +239,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
 
                 // Upload Form Section (If not submitted or in edit mode)
                 if (submission == null || (_isEditingMode && !isGraded))
-                  _buildUploadForm(provider.isSubmitting, isUpdating: submission != null)
+                  _buildUploadForm(provider.isSubmitting, assignment, isUpdating: submission != null)
                 else if (!isGraded)
                   SizedBox(
                     width: double.infinity,
@@ -393,7 +393,20 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
     );
   }
 
-  Widget _buildUploadForm(bool isSubmitting, {bool isUpdating = false}) {
+  Widget _buildUploadForm(bool isSubmitting, AssignmentModel assignment, {bool isUpdating = false}) {
+    final allowedTypes = assignment.allowedFileTypes.map((e) => e.toString().toLowerCase()).toList();
+    final allowImage = allowedTypes.isEmpty || allowedTypes.contains('image') || allowedTypes.contains('photo') || allowedTypes.contains('jpg') || allowedTypes.contains('png');
+    final allowPdf = allowedTypes.isEmpty || allowedTypes.contains('pdf') || allowedTypes.contains('document');
+
+    String allowedNoticeText = 'Pilih Berkas Tugas (Maks 10MB/file):';
+    if (allowImage && allowPdf) {
+      allowedNoticeText = 'Format diizinkan: Foto (JPG/PNG) & Dokumen PDF (Maks 10MB/file)';
+    } else if (allowPdf) {
+      allowedNoticeText = 'Format diizinkan guru: Dokumen PDF Saja (Maks 10MB/file)';
+    } else if (allowImage) {
+      allowedNoticeText = 'Format diizinkan guru: Foto Kamera/Galeri Saja (Maks 10MB/file)';
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -447,51 +460,54 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
             ),
           ],
           const SizedBox(height: 12),
-          const Text(
-            'Pilih Berkas Tugas (Foto JPG/PNG atau Dokumen PDF, Maks 10MB/file):',
-            style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
+          Text(
+            allowedNoticeText,
+            style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 16),
 
           // File Picker Buttons (Kamera, Galeri, Berkas PDF)
           Row(
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: isSubmitting ? null : () => _pickImage(ImageSource.camera),
-                  icon: const Icon(Icons.camera_alt_outlined, size: 16),
-                  label: const Text('Kamera', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              if (allowImage) ...[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: isSubmitting ? null : () => _pickImage(ImageSource.camera),
+                    icon: const Icon(Icons.camera_alt_outlined, size: 16),
+                    label: const Text('Kamera', style: TextStyle(fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: isSubmitting ? null : () => _pickImage(ImageSource.gallery),
-                  icon: const Icon(Icons.photo_library_outlined, size: 16),
-                  label: const Text('Galeri', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: isSubmitting ? null : () => _pickImage(ImageSource.gallery),
+                    icon: const Icon(Icons.photo_library_outlined, size: 16),
+                    label: const Text('Galeri', style: TextStyle(fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: isSubmitting ? null : _pickPdf,
-                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Colors.red),
-                  label: const Text('PDF', style: TextStyle(fontSize: 12, color: Colors.red)),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    side: const BorderSide(color: Colors.red),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ],
+              if (allowImage && allowPdf) const SizedBox(width: 6),
+              if (allowPdf)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: isSubmitting ? null : _pickPdf,
+                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Colors.red),
+                    label: const Text('PDF', style: TextStyle(fontSize: 12, color: Colors.red)),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
 

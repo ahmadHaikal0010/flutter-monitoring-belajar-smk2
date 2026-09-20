@@ -4,8 +4,7 @@ import '../../logic/providers/auth_provider.dart';
 import '../../logic/providers/exam_provider.dart';
 import '../../data/models/exam_model.dart';
 import 'package:intl/intl.dart';
-import 'exam_pengerjaan_screen.dart';
-import 'exam_result_screen.dart';
+import 'exam_detail_screen.dart';
 
 class ExamsTab extends StatefulWidget {
   final String subjectId;
@@ -237,68 +236,13 @@ class _ExamsTabState extends State<ExamsTab> {
     );
   }
 
-  void _handleExamTap(ExamModel exam) async {
-    final session = exam.studentSession;
-    final isSubmitted = session?.status == 'submitted' || session?.status == 'graded';
-
-    if (isSubmitted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ExamResultScreen(sessionId: session!.id),
-        ),
-      );
-      return;
-    }
-
-    // Validasi Akhir sebelum memulai/melanjutkan
-    final now = DateTime.now();
-    final startTime = exam.startTime;
-    final endTime = exam.endTime;
-
-    final isNotStartedYet = startTime != null && now.isBefore(startTime);
-    final isAlreadyEnded = endTime != null && now.isAfter(endTime);
-
-    if (session?.status != 'in_progress') {
-      if (isNotStartedYet) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ujian ini belum dimulai.')));
-        return;
-      }
-      if (isAlreadyEnded) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Masa pengerjaan telah berakhir.')));
-        return;
-      }
-    }
-
-    if (session == null) {
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Mulai Ujian?'),
-          content: Text('Anda akan memulai "${exam.title}". Sisa waktu akan langsung berjalan.'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Mulai')),
-          ],
-        ),
-      );
-      if (confirm != true) return;
-    }
-
-    if (!mounted) return;
-    
-    final token = Provider.of<AuthProvider>(context, listen: false).token;
-    if (token == null) return;
-
-    final success = await Provider.of<ExamProvider>(context, listen: false).startExam(token, exam.id);
-    if (success && mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const ExamPengerjaanScreen(),
-        ),
-      ).then((_) => _fetchExams());
-    }
+  void _handleExamTap(ExamModel exam) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ExamDetailScreen(exam: exam),
+      ),
+    ).then((_) => _fetchExams());
   }
 
   Color _getStatusColor(String? status) {
