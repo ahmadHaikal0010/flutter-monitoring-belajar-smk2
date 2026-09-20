@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import 'profile_screen.dart';
+import 'change_password_screen.dart';
 
 class DetailsProfileScreen extends StatelessWidget {
   const DetailsProfileScreen({super.key});
@@ -27,6 +28,28 @@ class DetailsProfileScreen extends StatelessWidget {
                 Center(
                   child: Column(
                     children: [
+                      if (authProvider.isUsingDefaultPassword)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 24),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.amber.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.warning_amber_rounded, size: 20, color: Colors.amber.shade900),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text(
+                                  'Peringatan: Anda masih menggunakan password default "password123". Segera hubungi admin untuk perubahan atau perbarui di sistem.',
+                                  style: TextStyle(fontSize: 12, color: Colors.black87),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
@@ -108,6 +131,28 @@ class DetailsProfileScreen extends StatelessWidget {
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Change Password Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.lock_reset_rounded),
+                    label: const Text('Ubah Kata Sandi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF2563EB),
+                      side: const BorderSide(color: Color(0xFF2563EB)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                   ),
                 ),

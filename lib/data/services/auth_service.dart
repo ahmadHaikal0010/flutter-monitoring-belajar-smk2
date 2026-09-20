@@ -10,12 +10,12 @@ class AuthService {
     },
   ));
 
-  Future<Response> login(String email, String password, String deviceName) async {
+  Future<Response> login(String nisn, String password, String deviceName) async {
     try {
       final response = await _dio.post(
         ApiConstants.login,
         data: {
-          'email': email,
+          'nisn': nisn,
           'password': password,
           'device_name': deviceName,
         },
@@ -72,6 +72,32 @@ class AuthService {
     try {
       final response = await _dio.get(
         ApiConstants.profile,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      return response;
+    } on DioException catch (_) {
+      rethrow;
+    }
+  }
+
+  Future<Response> changePassword({
+    required String token,
+    required String oldPassword,
+    required String newPassword,
+    required String newPasswordConfirmation,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.changePassword,
+        data: {
+          'old_password': oldPassword,
+          'new_password': newPassword,
+          'new_password_confirmation': newPasswordConfirmation,
+        },
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',

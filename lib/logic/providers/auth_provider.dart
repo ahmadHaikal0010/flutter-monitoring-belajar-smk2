@@ -15,12 +15,14 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   bool _isPendingApproval = false;
+  bool _isUsingDefaultPassword = false;
 
   UserModel? get user => _user;
   String? get token => _token;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isPendingApproval => _isPendingApproval;
+  bool get isUsingDefaultPassword => _isUsingDefaultPassword;
   bool get isAuthenticated => _token != null;
 
   void resetPendingStatus() {
@@ -29,14 +31,14 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> login(String email, String password, String deviceName) async {
+  Future<bool> login(String nisn, String password, String deviceName) async {
     _isLoading = true;
     _errorMessage = null;
     _isPendingApproval = false;
     notifyListeners();
 
     try {
-      final response = await _authService.login(email, password, deviceName);
+      final response = await _authService.login(nisn, password, deviceName);
       
       if (response.data['success'] == true) {
         final data = response.data['data'];
@@ -49,6 +51,9 @@ class AuthProvider with ChangeNotifier {
         // Simpan token ke SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', _token!);
+        
+        _isUsingDefaultPassword = password == 'password123';
+        await prefs.setBool('isDefaultPassword', _isUsingDefaultPassword);
         
         _isLoading = false;
         notifyListeners();
@@ -166,6 +171,49 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     return false;
   }
+
+  Future<bool> changePassword({
+    required String oldPassword,
+    required String newPassword,
+    required String newPasswordConfirmation,
+  }) async {
+    if (_token == null) return false;
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _authService.changePassword(
+        token: _token!,
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+        newPasswordConfirmation: newPasswordConfirmation,
+      );
+
+      if (response.data['success'] == true) {
+        // Jika password diubah, cek apakah itu masih password default (seharusnya tidak)
+        _isUsingDefaultPassword = false;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isDefaultPassword', false);
+        
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+    } on DioException catch (e) {
+      if (e.response != null && e.response!.data is Map) {
+        _errorMessage = e.response!.data['message'] ?? 'Gagal mengubah kata sandi';
+      } else {
+        _errorMessage = 'Gagal terhubung ke server';
+      }
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
   Future<void> logout() async {
     if (_token != null) {
       try {
@@ -177,9 +225,11 @@ class AuthProvider with ChangeNotifier {
     
     _token = null;
     _user = null;
+    _isUsingDefaultPassword = false;
     await CacheService.clearAllCache();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
+    await prefs.remove('isDefaultPassword');
     notifyListeners();
   }
 
@@ -188,6 +238,7 @@ class AuthProvider with ChangeNotifier {
     if (!prefs.containsKey('token')) return;
     
     _token = prefs.getString('token');
+    _isUsingDefaultPassword = prefs.getBool('isDefaultPassword') ?? false;
     
     try {
       final response = await _studentService.getProfile(_token!);
@@ -195,7 +246,9 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     } catch (_) {
       _token = null;
+      _isUsingDefaultPassword = false;
       await prefs.remove('token');
+      await prefs.remove('isDefaultPassword');
     }
   }
 }
